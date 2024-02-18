@@ -1,0 +1,25 @@
+body{
+    font-family:'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+.main {
+    background-image: url('https://64.media.tumblr.com/a7d100aabe2033b2fff1b7d5bf6af05f/tumblr_nlprx4nuGI1relaado1_400.gif');
+    color: rgb(255, 255, 255);
+    font-size: 30px;
+    font-weight: 900;
+    height: 100vh;
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.semi{
+    height: 500px;
+    width: 1000px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    flex-direction: column;
+    border-radius: 20px;
+    background-color: rgba(240, 248, 255, 0.493);
+}
