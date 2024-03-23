@@ -4,7 +4,7 @@ import Link from 'next/link'
 export default async function page() {
     const res = await fetch('https://api.imgflip.com/get_memes')
     const result = await res.json()
-
+    console.log(result.data.memes.box_count);
     let Memes = result.data.memes
     console.log(Memes.id);
     return (

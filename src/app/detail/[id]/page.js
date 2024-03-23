@@ -1,7 +1,7 @@
 'use client'
 
 // Import necessary libraries and styles
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import fetchedData from './data';
 import Link from 'next/link'
 import './page.css';
@@ -11,34 +11,58 @@ function Detail({ params }) {
     const [text1, setText1] = useState('');
     const [text2, setText2] = useState('');
     const [generatedMemeUrl, setGeneratedMemeUrl] = useState('');
-    const [error, setError] = useState(null);
+    const [error, setError] = useState(null)
     const [selectedMemeUrl, setSelectedMemeUrl] = useState('');
+    const [inputBoxes, setInputBoxes] = useState([]);
+    const resultRef = useRef(null);
 
     // Fetch meme data on component mount
     useEffect(() => {
         fetchMeme();
     }, []);
 
+    useEffect(() => {
+        // Scroll to the result section when generatedMemeUrl changes
+        if (generatedMemeUrl && resultRef.current) {
+            resultRef.current.scrollIntoView({ behavior: 'smooth' });
+        }
+    }, [generatedMemeUrl]);
     // Function to fetch meme data
     async function fetchMeme() {
         try {
             const data = await fetchedData();
-            console.log('data:', data);
             const meme = data.data.memes.find(meme => meme.id === params.id);
             setSelectedMemeUrl(meme.url);
+
+            const inputs = Array.from({ length: meme.box_count }, (_, index) => ({
+                id: `text${index + 1}`,
+                value: ''
+            }));
+            setInputBoxes(inputs);
         } catch (error) {
             console.error('Error fetching meme:', error);
         }
     }
-
+    const handleInputChange = (index, value) => {
+        const updatedInputs = [...inputBoxes];
+        updatedInputs[index].value = value;
+        setInputBoxes(updatedInputs);
+    };
     // Function to generate meme
     async function generateMeme() {
         setError(null);
-
+    
         try {
-            const response = await fetch(`https://api.imgflip.com/caption_image?template_id=${params.id}&username=Ahmedmemon2&password=ahmed123&text0=${text1}&text1=${text2}`);
+            // Constructing the texts variable in the required format
+            const texts = inputBoxes.map((input, index) => `boxes[${index}][text]=${encodeURIComponent(input.value)}`).join('&');
+            
+            // Constructing the complete API request URL with the parameters
+            const url = `https://api.imgflip.com/caption_image?template_id=${params.id}&username=Ahmedmemon2&password=ahmed123&${texts}`;
+    
+            // Sending the request
+            const response = await fetch(url);
             const data = await response.json();
-
+    
             if (data.success) {
                 setGeneratedMemeUrl(data.data.url);
             } else {
@@ -49,7 +73,6 @@ function Detail({ params }) {
             setError('An error occurred while generating the meme.');
         }
     }
-
     async function handleDownload() {
         if (generatedMemeUrl) {
             try {
@@ -66,7 +89,6 @@ function Detail({ params }) {
             }
         }
     }
-
     return (
         <div className="container flex flex-col items-center justify-center bg-gray-100">
             <Link href='/dashboard'>
@@ -85,16 +107,20 @@ function Detail({ params }) {
             </Link>
 
             <h1>Generate A Custom Meme</h1>
+            
             <div className="inputDiv p-6 rounded-lg shadow-md mb-6">
-                <div className="mb-4">
-                    <label htmlFor="text1" className="text-lg font-semibold">Text 1:</label>
-                    <input className="InputValue h-12 p-2 border border-gray-300 rounded" type="text" id="text1" value={text1} onChange={(e) => setText1(e.target.value)} />
-                </div>
-
-                <div className="mb-4">
-                    <label htmlFor="text2" className="text-lg font-semibold">Text 2:</label>
-                    <input className="InputValue h-12 p-2 border border-gray-300 rounded" type="text" id="text2" value={text2} onChange={(e) => setText2(e.target.value)} />
-                </div>
+            {inputBoxes?.map((input, index) => (
+                    <div className="mb-4" key={input.id}>
+                        <label htmlFor={input.id} className="text-lg font-semibold">Text {index + 1}:</label>
+                        <input
+                            className="InputValue h-12 p-2 border border-gray-300 rounded"
+                            type="text"
+                            id={input.id}
+                            value={input.value}
+                            onChange={(e) => handleInputChange(index, e.target.value)}
+                        />
+                    </div>
+                ))}
 
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }} className="button">
                     <button className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer hover:bg-blue-600 transition" onClick={generateMeme}>
@@ -105,7 +131,7 @@ function Detail({ params }) {
 
             <img className="w-64 h-64 m-4 rounded-lg shadow-lg" src={selectedMemeUrl} alt="Selected Meme" />
 
-            <div className="m-4">
+            <div className="m-4" ref={resultRef}>
                 {error && <div className="text-red-500 mb-4">{error}</div>}
                 {generatedMemeUrl &&
                     <div className='result'>
